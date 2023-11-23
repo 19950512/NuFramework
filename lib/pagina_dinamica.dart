@@ -1,19 +1,98 @@
 import 'package:flutter/material.dart';
+import 'package:nuframework/models/pagina_dinamica_model.dart';
+import 'package:nuframework/repositories/pagina_dinamica_repository.dart';
 
-import 'carousel_item.dart';
+class PaginaDinamica extends StatefulWidget {
+  const PaginaDinamica({
+    super.key,
+  });
 
-final class Pagina {
-  String titulo;
-  List<CarouselItem> _carousel = [];
-  List<Map<String, dynamic>> body = [];
+  @override
+  State<PaginaDinamica> createState() => _PaginaDinamicaState();
+}
 
+class _PaginaDinamicaState extends State<PaginaDinamica> {
   Widget _bodyConteudo = Container();
   List<Widget> sessoes = [];
+  List<Map<String, dynamic>> body = [];
+  Text? title;
+  Widget? leading;
+  Widget? drawer;
 
-  Pagina({
-    required this.titulo,
-    this.body = const [],
+  late PaginaDinamicaRepository paginaDinamicaRepository;
+
+  getPagina(String endpoint) async {
+    PaginaDinamicaModel paginaDinamica =
+        await paginaDinamicaRepository.getPaginaDinamica(endpoint);
+
+    processa(
+      title: paginaDinamica.titulo,
+      leading: paginaDinamica.leading,
+      drawer: paginaDinamica.drawer,
+      body: paginaDinamica.payload,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    paginaDinamicaRepository = PaginaDinamicaRepository();
+    getPagina('home');
+  }
+
+  void processa({
+    title = '',
+    leading = null,
+    drawer = null,
+    required List<Map<String, dynamic>> body,
   }) {
+    sessoes = [];
+
+    this.drawer = null;
+    if (drawer != null) {
+      this.drawer = Drawer(
+        child: ListView.builder(
+          itemCount: drawer.length,
+          itemBuilder: (context, index) {
+            var item = drawer[index];
+
+            if (item['type'] == 'title') {
+              return DrawerHeader(
+                child: Text(item['text']),
+              );
+            }
+
+            if (item['type'] == 'text-button') {
+              return ListTile(
+                title: Text(item['label']),
+                onTap: () async {
+                  getPagina(item['endpoint']);
+
+                  Navigator.pop(context);
+                },
+              );
+            }
+
+            return Container();
+          },
+        ),
+      );
+    }
+
+    this.title = null;
+    if (title.isNotEmpty) {
+      this.title = Text(title);
+    }
+
+    this.leading = null;
+    if (leading != null) {
+      this.leading = IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.black),
+        onPressed: () => getPagina(leading),
+      );
+    }
+
     if (body.isNotEmpty) {
       for (var item in body) {
         if (item['type'] == 'carousel') {
@@ -105,30 +184,44 @@ final class Pagina {
             ),
           );
         }
+
+        if (item['type'] == 'text-button') {
+          sessoes.add(
+            TextButton(
+              onPressed: () async {
+                getPagina(item['endpoint']);
+              },
+              child: Text(item['label']),
+            ),
+          );
+        }
       }
     }
-
-    /*sessoes.add(
-      TextButton(
-        onPressed: () {
-          print('Alguma coisa');
-        },
-        child: const Text('Alguma coisa'),
-      ),
-    );*/
 
     _bodyConteudo = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: sessoes,
     );
+
+    setState(() {});
   }
 
   Widget render() {
     return Scaffold(
       appBar: AppBar(
-        title: Text(titulo),
+        title: title,
+        leading: leading,
       ),
-      body: _bodyConteudo,
+      drawer: drawer,
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: _bodyConteudo,
+      ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return render();
   }
 }
