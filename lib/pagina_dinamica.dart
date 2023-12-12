@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:nuframework/models/pagina_dinamica_model.dart';
 import 'package:nuframework/repositories/pagina_dinamica_repository.dart';
 
+import 'repositories/pagina_dinamica_repository_implementation.dart';
+import 'services/clientHTTP/HttpClientHTTPImplementation.dart';
+
 class PaginaDinamica extends StatefulWidget {
   const PaginaDinamica({
     super.key,
@@ -14,7 +17,8 @@ class PaginaDinamica extends StatefulWidget {
 class _PaginaDinamicaState extends State<PaginaDinamica> {
   Widget _bodyConteudo = Container();
   List<Widget> sessoes = [];
-  List<Map<String, dynamic>> body = [];
+  List body = [];
+  List<TextEditingController?> controllersTextList = [];
   Text? title;
   Widget? leading;
   Widget? drawer;
@@ -37,7 +41,13 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
   void initState() {
     super.initState();
 
-    paginaDinamicaRepository = PaginaDinamicaRepository();
+    paginaDinamicaRepository = PaginaDinamicaRepositoryImplementation(
+      clientHTTP: HTTPClientHTTPImplementation(
+        baseURL: 'http://192.168.1.106:8052/',
+        headers: {},
+        body: {},
+      ),
+    );
     getPagina('home');
   }
 
@@ -45,9 +55,11 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
     title = '',
     leading = null,
     drawer = null,
-    required List<Map<String, dynamic>> body,
+    required List body,
   }) {
     sessoes = [];
+
+    this.controllersTextList = [];
 
     this.drawer = null;
     if (drawer != null) {
@@ -59,7 +71,21 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
 
             if (item['type'] == 'title') {
               return DrawerHeader(
-                child: Text(item['text']),
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: NetworkImage(
+                            'https://avatars.githubusercontent.com/u/36517599',
+                          ),
+                        ),
+                      ),
+                    ),
+                    Text('Matheus Maydana')
+                  ],
+                ),
               );
             }
 
@@ -98,9 +124,24 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
         if (item['type'] == 'carousel') {
           var carousel = item;
 
+          double heightCarousel = MediaQuery.of(context).size.height;
+          if (carousel['height'] is String) {
+            if (carousel['height'] == 'infinity') {
+              heightCarousel = MediaQuery.of(context).size.height;
+            } else {
+              heightCarousel = double.parse(carousel['height']);
+            }
+          } else {
+            if (carousel['height'] is int || carousel['height'] is double) {
+              if (carousel['height'] != null && carousel['height'] > 0) {
+                heightCarousel = double.parse(carousel['height']);
+              }
+            }
+          }
+
           sessoes.add(
             SizedBox(
-              height: carousel['height'].toDouble(),
+              height: heightCarousel,
               child: ListView.builder(
                 scrollDirection: carousel['direction'] == 'vertical'
                     ? Axis.vertical
@@ -110,7 +151,7 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
                   var item = carousel['items'][index];
 
                   return SizedBox(
-                    width: carousel['heightItem'].toDouble(),
+                    width: double.parse(carousel['heightItem']),
                     child: ListTile(
                       title: Text(item['title']),
                       subtitle: Text(item['subtitle']),
@@ -185,6 +226,14 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
           );
         }
 
+        if (item['type'] == 'divider') {
+          sessoes.add(
+            Divider(
+              height: int.parse(item['height']).toDouble(),
+            ),
+          );
+        }
+
         if (item['type'] == 'text-button') {
           sessoes.add(
             TextButton(
@@ -194,6 +243,10 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
               child: Text(item['label']),
             ),
           );
+        }
+
+        if (item['type'] == 'formulario') {
+          sessoes.add(MyForm(item));
         }
       }
     }
@@ -215,7 +268,9 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
       drawer: drawer,
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: _bodyConteudo,
+        child: SingleChildScrollView(
+          child: _bodyConteudo,
+        ),
       ),
     );
   }
@@ -223,5 +278,90 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
   @override
   Widget build(BuildContext context) {
     return render();
+  }
+}
+
+class MyForm extends StatelessWidget {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  final Map<String, dynamic> item;
+
+  MyForm(this.item, {super.key});
+
+  List<Widget> sessoes = [];
+
+  List<Map<String, dynamic>> controllersTextList = [];
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Builder(
+        builder: (BuildContext context) {
+          if (item['fields'] != null) {
+            for (var field in item['fields']) {
+              controllersTextList.add(
+                {
+                  'label': field['label'],
+                  'placeholder': field['placeholder'] ?? '',
+                  'controller': TextEditingController(
+                    text: field['value'] ?? '',
+                  ),
+                },
+              );
+            }
+          }
+
+          if (controllersTextList.isNotEmpty) {
+            for (var controller in controllersTextList) {
+              sessoes.add(
+                TextFormField(
+                  controller: controller['controller'],
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: controller['placeholder'] ?? '',
+                    labelText: controller['label'] ?? '',
+                  ),
+                  validator: (String? value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, preencha o campo';
+                    }
+
+                    Map<String, dynamic> data = {};
+                    for (var item in controllersTextList) {
+                      data[item['label']] = item['controller']!.text;
+                    }
+
+                    print(data);
+
+                    return null;
+                  },
+                ),
+              );
+              sessoes.add(const SizedBox(height: 10));
+            }
+
+            sessoes.add(
+              TextButton(
+                onPressed: () async {
+                  if (_formKey.currentState!.validate()) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Processando dados'),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Enviar'),
+              ),
+            );
+          }
+
+          return Column(
+            children: sessoes,
+          );
+        },
+      ),
+    );
   }
 }

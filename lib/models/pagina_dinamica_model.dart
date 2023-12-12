@@ -44,24 +44,34 @@ class PaginaDinamicaModel {
   }
 
   factory PaginaDinamicaModel.fromMap(Map<String, dynamic> map) {
+    List<Map<String, dynamic>> payloadList =
+        List<Map<String, dynamic>>.from(map['payload'] as List);
+    payloadList = payloadList.map((item) {
+      return item.map((key, value) {
+        if (value is int) {
+          return MapEntry(key, value.toString());
+        }
+        return MapEntry(key, value);
+      });
+    }).toList();
+
+    List<Map<String, dynamic>> drawerList =
+        List<Map<String, dynamic>>.from(map['drawer'] as List);
+    drawerList = drawerList.map((item) {
+      return item.map((key, value) {
+        if (value is int) {
+          return MapEntry(key, value.toString());
+        }
+        return MapEntry(key, value);
+      });
+    }).toList();
+
     return PaginaDinamicaModel(
       endpoint: map['endpoint'] as String,
       titulo: map['title'] as String,
-      leading: map['pop'] != null ? map['pop'] as String : null,
-      payload: List<Map<String, dynamic>>.from(
-        (map['payload'] as List<Map<String, dynamic>>)
-            .map<Map<String, dynamic>?>(
-          (x) => x,
-        ),
-      ),
-      drawer: map['drawer'] != null
-          ? List<Map<String, dynamic>>.from(
-              (map['drawer'] as List<Map<String, dynamic>>)
-                  .map<Map<String, dynamic>?>(
-                (x) => x,
-              ),
-            )
-          : null,
+      leading: map['leading'] as String?,
+      payload: payloadList,
+      drawer: drawerList,
     );
   }
 

@@ -2,7 +2,7 @@ import 'resposta_payload.dart';
 
 class HomeMock extends RespostaPayload {
   Map<String, dynamic> respostaAPI = {
-    'title': 'HOME PAGE',
+    'title': 'HOME INICIO PAGE',
     'endpoint': 'home',
     'drawer': [
       {
@@ -13,6 +13,11 @@ class HomeMock extends RespostaPayload {
         'type': 'text-button',
         'label': 'Home',
         'endpoint': 'home',
+      },
+      {
+        'type': 'text-button',
+        'label': 'Contato',
+        'endpoint': 'contato',
       },
       {
         'type': 'text-button',
@@ -66,7 +71,15 @@ class HomeMock extends RespostaPayload {
             'Lorem ipsum dolor sit amet, consectetur adipiscing elitLorem ipsum dolor sit amet, consectetur adipiscing elitLorem ipsum dolor',
       },
       {
+        'type': 'divider',
+        'height': '20',
+      },
+      {
         'type': 'space',
+        'height': '40',
+      },
+      {
+        'type': 'divider',
         'height': '20',
       },
       {
@@ -76,7 +89,7 @@ class HomeMock extends RespostaPayload {
             'Lorem ipsum dolor sit amet, consectetur adipiscing elitLorem ipsum dolor sit amet, consectetur adipiscing elitLorem ipsum dolor',
       },
       {
-        'type': 'space',
+        'type': 'divider',
         'height': '20',
       },
       {
@@ -118,9 +131,22 @@ class HomeMock extends RespostaPayload {
         ]
       },
       {
+        'type': 'divider',
+        'height': '20',
+      },
+      {
         'type': 'text-button',
         'label': 'Alguma coisa',
         'endpoint': 'alguma-coisa',
+      },
+      {
+        'type': 'divider',
+        'height': '20',
+      },
+      {
+        'type': 'title',
+        'align': 'center',
+        'text': 'Promoções do dia',
       },
     ]
   };

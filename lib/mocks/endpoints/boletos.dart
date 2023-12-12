@@ -16,6 +16,11 @@ class BoletosMock extends RespostaPayload {
       },
       {
         'type': 'text-button',
+        'label': 'Contato',
+        'endpoint': 'contato',
+      },
+      {
+        'type': 'text-button',
         'label': 'Boletos',
         'endpoint': 'tela-de-boletos',
       },
@@ -29,7 +34,7 @@ class BoletosMock extends RespostaPayload {
       {
         'type': 'carousel',
         'direction': 'vertical',
-        'height': 500,
+        'height': 'infinity',
         'heightItem': 100,
         'items': [
           {
@@ -51,6 +56,56 @@ class BoletosMock extends RespostaPayload {
             'title': 'Boleto 4',
             'subtitle': 'Subtitulo Carousel 4',
             'image': 'https://picsum.photos/seed/1/200/300'
+          },
+          {
+            'title': 'Boleto 5',
+            'subtitle': 'Subtitulo Carousel 5',
+            'image': 'https://picsum.photos/seed/2/200/300'
+          },
+          {
+            'title': 'Boleto 5',
+            'subtitle': 'Subtitulo Carousel 5',
+            'image': 'https://picsum.photos/seed/2/200/300'
+          },
+          {
+            'title': 'Boleto 5',
+            'subtitle': 'Subtitulo Carousel 5',
+            'image': 'https://picsum.photos/seed/2/200/300'
+          },
+          {
+            'title': 'Boleto 3',
+            'subtitle': 'Subtitulo Carousel 3',
+            'image': 'https://picsum.photos/seed/2/200/300'
+          },
+          {
+            'title': 'Boleto 4',
+            'subtitle': 'Subtitulo Carousel 4',
+            'image': 'https://picsum.photos/seed/1/200/300'
+          },
+          {
+            'title': 'Boleto 5',
+            'subtitle': 'Subtitulo Carousel 5',
+            'image': 'https://picsum.photos/seed/2/200/300'
+          },
+          {
+            'title': 'Boleto 5',
+            'subtitle': 'Subtitulo Carousel 5',
+            'image': 'https://picsum.photos/seed/2/200/300'
+          },
+          {
+            'title': 'Boleto 5',
+            'subtitle': 'Subtitulo Carousel 5',
+            'image': 'https://picsum.photos/seed/2/200/300'
+          },
+          {
+            'title': 'Boleto 5',
+            'subtitle': 'Subtitulo Carousel 5',
+            'image': 'https://picsum.photos/seed/2/200/300'
+          },
+          {
+            'title': 'Boleto 5',
+            'subtitle': 'Subtitulo Carousel 5',
+            'image': 'https://picsum.photos/seed/2/200/300'
           },
           {
             'title': 'Boleto 5',
