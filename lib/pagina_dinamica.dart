@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nuframework/models/pagina_dinamica_model.dart';
 import 'package:nuframework/repositories/pagina_dinamica_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'repositories/pagina_dinamica_repository_implementation.dart';
 import 'services/clientHTTP/HttpClientHTTPImplementation.dart';
@@ -22,14 +23,25 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
   Text? title;
   Widget? leading;
   Widget? drawer;
+  String paginaAtual = 'home';
+  String accessToken = '';
 
   late PaginaDinamicaRepository paginaDinamicaRepository;
 
-  getPagina(String endpoint) async {
+  getPagina({
+    required String endpoint,
+    Map<String, dynamic>? data,
+  }) async {
+    SharedPreferences.getInstance().then((prefs) {
+      accessToken = prefs.getString('accessToken') ?? '';
+    });
+
+    print(accessToken);
     PaginaDinamicaModel paginaDinamica =
-        await paginaDinamicaRepository.getPaginaDinamica(endpoint);
+        await paginaDinamicaRepository.getPaginaDinamica(endpoint, data);
 
     processa(
+      paginaAtual: paginaDinamica.endpoint,
       title: paginaDinamica.titulo,
       leading: paginaDinamica.leading,
       drawer: paginaDinamica.drawer,
@@ -40,18 +52,28 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
   @override
   void initState() {
     super.initState();
+    Map<String, String> headerRequest = {};
+
+    headerRequest['Content-Type'] = 'application/json';
+
+    if (accessToken.isNotEmpty) {
+      headerRequest['Authorization'] = 'Bearer $accessToken';
+    }
 
     paginaDinamicaRepository = PaginaDinamicaRepositoryImplementation(
       clientHTTP: HTTPClientHTTPImplementation(
-        baseURL: 'http://192.168.1.106:8052/',
-        headers: {},
+        baseURL: 'http://192.168.18.10:8052/',
+        headers: headerRequest,
         body: {},
       ),
     );
-    getPagina('home');
+    getPagina(
+      endpoint: paginaAtual,
+    );
   }
 
   void processa({
+    paginaAtual = 'home',
     title = '',
     leading = null,
     drawer = null,
@@ -61,49 +83,55 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
 
     this.controllersTextList = [];
 
+    this.paginaAtual = paginaAtual;
+
     this.drawer = null;
     if (drawer != null) {
-      this.drawer = Drawer(
-        child: ListView.builder(
-          itemCount: drawer.length,
-          itemBuilder: (context, index) {
-            var item = drawer[index];
+      if (drawer.length > 0) {
+        this.drawer = Drawer(
+          child: ListView.builder(
+            itemCount: drawer.length,
+            itemBuilder: (context, index) {
+              var item = drawer[index];
 
-            if (item['type'] == 'title') {
-              return DrawerHeader(
-                child: Column(
-                  children: [
-                    Container(
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: NetworkImage(
-                            'https://avatars.githubusercontent.com/u/36517599',
+              if (item['type'] == 'title') {
+                return DrawerHeader(
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                            image: NetworkImage(
+                              'https://avatars.githubusercontent.com/u/36517599',
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    Text('Matheus Maydana')
-                  ],
-                ),
-              );
-            }
+                      Text('Matheus Maydana')
+                    ],
+                  ),
+                );
+              }
 
-            if (item['type'] == 'text-button') {
-              return ListTile(
-                title: Text(item['label']),
-                onTap: () async {
-                  getPagina(item['endpoint']);
+              if (item['type'] == 'text-button') {
+                return ListTile(
+                  title: Text(item['label']),
+                  onTap: () async {
+                    getPagina(
+                      endpoint: item['endpoint'],
+                    );
 
-                  Navigator.pop(context);
-                },
-              );
-            }
+                    Navigator.pop(context);
+                  },
+                );
+              }
 
-            return Container();
-          },
-        ),
-      );
+              return Container();
+            },
+          ),
+        );
+      }
     }
 
     this.title = null;
@@ -115,7 +143,7 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
     if (leading != null) {
       this.leading = IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.black),
-        onPressed: () => getPagina(leading),
+        onPressed: () => getPagina(endpoint: leading),
       );
     }
 
@@ -164,42 +192,6 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
           );
         }
 
-        if (item['type'] == 'title') {
-          Alignment alignTitle = Alignment.center;
-          if (item['align'] == 'left') {
-            alignTitle = Alignment.centerLeft;
-          } else if (item['align'] == 'right') {
-            alignTitle = Alignment.centerRight;
-          }
-          sessoes.add(
-            Align(
-              alignment: alignTitle,
-              child: Text(
-                item['text'],
-                style: const TextStyle(fontSize: 21),
-              ),
-            ),
-          );
-        }
-
-        if (item['type'] == 'subtitle') {
-          Alignment alignSubTitle = Alignment.center;
-          if (item['align'] == 'left') {
-            alignSubTitle = Alignment.centerLeft;
-          } else if (item['align'] == 'right') {
-            alignSubTitle = Alignment.centerRight;
-          }
-          sessoes.add(
-            Align(
-              alignment: alignSubTitle,
-              child: Text(
-                item['text'],
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-          );
-        }
-
         if (item['type'] == 'text') {
           Alignment alignSubTitle = Alignment.center;
           if (item['align'] == 'left') {
@@ -207,12 +199,24 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
           } else if (item['align'] == 'right') {
             alignSubTitle = Alignment.centerRight;
           }
+
+          TextStyle styleText = const TextStyle(fontSize: 14);
+          if (item['textType'] == 'title') {
+            styleText = const TextStyle(fontSize: 21);
+          }
+          if (item['textType'] == 'subtitle') {
+            styleText = const TextStyle(fontSize: 16);
+          }
+          if (item['textType'] == 'paragraph') {
+            styleText = const TextStyle(fontSize: 14);
+          }
+
           sessoes.add(
             Align(
               alignment: alignSubTitle,
               child: Text(
                 item['text'],
-                style: const TextStyle(fontSize: 14),
+                style: styleText,
               ),
             ),
           );
@@ -238,7 +242,10 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
           sessoes.add(
             TextButton(
               onPressed: () async {
-                getPagina(item['endpoint']);
+                print('Requisitando a pagina: ${item['endpoint']}');
+                getPagina(
+                  endpoint: item['endpoint'],
+                );
               },
               child: Text(item['label']),
             ),
@@ -246,7 +253,7 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
         }
 
         if (item['type'] == 'formulario') {
-          sessoes.add(MyForm(item));
+          sessoes.add(MyForm(item, getPagina: getPagina));
         }
       }
     }
@@ -266,10 +273,19 @@ class _PaginaDinamicaState extends State<PaginaDinamica> {
         leading: leading,
       ),
       drawer: drawer,
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: _bodyConteudo,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          print('Refreshando..');
+          print('Pagina atual: $paginaAtual');
+          getPagina(
+            endpoint: paginaAtual,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: _bodyConteudo,
+          ),
         ),
       ),
     );
@@ -286,7 +302,9 @@ class MyForm extends StatelessWidget {
 
   final Map<String, dynamic> item;
 
-  MyForm(this.item, {super.key});
+  late Function? getPagina;
+
+  MyForm(this.item, {this.getPagina, super.key});
 
   List<Widget> sessoes = [];
 
@@ -303,6 +321,7 @@ class MyForm extends StatelessWidget {
               controllersTextList.add(
                 {
                   'label': field['label'],
+                  'type': field['fieldType'] ?? '',
                   'placeholder': field['placeholder'] ?? '',
                   'controller': TextEditingController(
                     text: field['value'] ?? '',
@@ -317,6 +336,7 @@ class MyForm extends StatelessWidget {
               sessoes.add(
                 TextFormField(
                   controller: controller['controller'],
+                  obscureText: controller['type'] == 'password',
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
                     hintText: controller['placeholder'] ?? '',
@@ -331,8 +351,6 @@ class MyForm extends StatelessWidget {
                     for (var item in controllersTextList) {
                       data[item['label']] = item['controller']!.text;
                     }
-
-                    print(data);
 
                     return null;
                   },
@@ -350,6 +368,19 @@ class MyForm extends StatelessWidget {
                         content: Text('Processando dados'),
                       ),
                     );
+
+                    // os dados do formulario
+                    Map<String, dynamic> data = {};
+                    for (var item in controllersTextList) {
+                      data[item['label']] = item['controller']!.text;
+                    }
+
+                    getPagina!(
+                      endpoint: item['endpoint'],
+                      data: data,
+                    );
+
+                    print('Enviando dados: $data');
                   }
                 },
                 child: const Text('Enviar'),
